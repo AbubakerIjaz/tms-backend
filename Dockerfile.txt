@@ -1,0 +1,18 @@
+FROM php:8.2-cli
+
+# PostgreSQL aur zaroori tools install karein
+RUN apt-get update && apt-get install -y libpq-dev unzip git
+RUN docker-php-ext-install pdo pdo_pgsql
+
+# Composer (PHP Package Manager) install karein
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# App ka working folder set karein
+WORKDIR /app
+COPY . .
+
+# Laravel ke packages install karein
+RUN composer install --optimize-autoloader --no-dev
+
+# Laravel ka local server duniya ke liye live karein
+CMD php artisan serve --host=0.0.0.0 --port=$PORT
