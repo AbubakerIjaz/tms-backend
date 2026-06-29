@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Api\Concerns\AppliesListingFilters;
 use App\Models\Transaction;
+use App\Services\NotificationDispatcher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -70,6 +71,8 @@ class TransactionController extends ShopController
             'shop_id' => $this->shopId($request),
             'payment_method' => $data['payment_method'] ?? 'cash',
         ]);
+
+        NotificationDispatcher::transactionCreated($transaction);
 
         return response()->json($transaction->load(['client:id,name', 'order:id,order_number']), 201);
     }

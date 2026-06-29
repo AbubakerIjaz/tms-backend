@@ -134,10 +134,10 @@ class ClientController extends ShopController
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['required', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string'],
-            'gender' => ['nullable', 'in:male,female,other'],
+            'gender' => ['required', 'in:male,female,other'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -155,7 +155,15 @@ class ClientController extends ShopController
 
         $client->load([
             'stitchingSizes' => fn ($q) => $q->latest('measured_at'),
-            'orders' => fn ($q) => $q->with(['design:id,name', 'garmentType:id,name'])->latest()->limit(10),
+            'orders' => fn ($q) => $q->with([
+                'design:id,name',
+                'garmentType:id,name',
+                'items.design:id,name',
+                'items.garmentType:id,name',
+            ])
+                ->withCount('items')
+                ->latest()
+                ->limit(10),
         ]);
 
         return response()->json($client);
@@ -166,11 +174,11 @@ class ClientController extends ShopController
         $this->authorizeClient($request, $client);
 
         $data = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'phone' => ['sometimes', 'required', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string'],
-            'gender' => ['nullable', 'in:male,female,other'],
+            'gender' => ['sometimes', 'required', 'in:male,female,other'],
             'notes' => ['nullable', 'string'],
         ]);
 

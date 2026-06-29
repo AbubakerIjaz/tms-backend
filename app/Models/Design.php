@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\BelongsToShop;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
 class Design extends Model
@@ -30,6 +31,42 @@ class Design extends Model
     }
 
     protected $appends = ['image_url'];
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * @return array<string, \Closure>
+     */
+    public static function activeLinkCountQueries(): array
+    {
+        $activeOrder = fn ($q) => $q->whereNotIn('status', ['delivered', 'cancelled']);
+
+        return [
+            'orders as active_orders_count' => $activeOrder,
+            'orderItems as active_order_items_count' => fn ($q) => $q
+                ->whereNotNull('design_id')
+                ->whereHas('order', $activeOrder),
+        ];
+    }
+
+    public function isLinkedToOrders(): bool
+    {
+        return $this->orders()
+            ->whereNotIn('status', ['delivered', 'cancelled'])
+            ->exists()
+            || $this->orderItems()
+                ->whereNotNull('design_id')
+                ->whereHas('order', fn ($q) => $q->whereNotIn('status', ['delivered', 'cancelled']))
+                ->exists();
+    }
 
     public function garmentType(): BelongsTo
     {

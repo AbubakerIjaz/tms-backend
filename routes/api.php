@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\StitchingSizeController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\VoiceMeasurementController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -45,6 +46,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/stitching-sizes/presets', [StitchingSizeController::class, 'presets']);
     Route::apiResource('stitching-sizes', StitchingSizeController::class);
+
+    Route::post('/voice-measurements/parse', [VoiceMeasurementController::class, 'parse']);
+    Route::post('/voice-measurements', [VoiceMeasurementController::class, 'store']);
 
     Route::get('/settings', [SettingsController::class, 'show']);
     Route::post('/settings', [SettingsController::class, 'update']);

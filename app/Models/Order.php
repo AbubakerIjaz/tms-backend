@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\BelongsToShop;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
@@ -54,6 +55,16 @@ class Order extends Model
     public function garmentType(): BelongsTo
     {
         return $this->belongsTo(GarmentType::class);
+    }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(OrderImage::class)->orderBy('sort_order');
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class)->orderBy('sort_order');
     }
 
     public function getBalanceAttribute(): float
