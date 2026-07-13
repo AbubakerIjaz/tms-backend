@@ -28,7 +28,16 @@ class StitchingSizeController extends ShopController
         $search = $request->query('search');
 
         $query = StitchingSize::forShop($shopId)
-            ->with('client:id,name,phone');
+            ->with(['client' => fn ($query) => $query->select('id', 'name', 'phone')->withCount([
+                'orders as total_orders_count',
+                'orders as pending_orders_count' => fn ($query) => $query->whereIn('status', ['pending', 'in_progress']),
+                'orders as ready_orders_count' => fn ($query) => $query->where('status', 'ready'),
+                'orders as delivered_orders_count' => fn ($query) => $query->where('status', 'delivered'),
+                'orders as paid_orders_count' => fn ($query) => $query->where('payment_status', 'paid'),
+                'orders as unpaid_orders_count' => fn ($query) => $query->where('payment_status', 'pending'),
+                // count client's stitching sizes (measurements)
+                'stitchingSizes as stitching_sizes_count',
+            ])]);
 
         if ($clientId) {
             $query->where('client_id', $clientId);

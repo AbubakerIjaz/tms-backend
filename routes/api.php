@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ClientController;
@@ -14,6 +15,8 @@ use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\VoiceMeasurementController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/appointments', [AppointmentController::class, 'store']);
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);

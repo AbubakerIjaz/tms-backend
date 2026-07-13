@@ -42,9 +42,7 @@ class OrderController extends ShopController
         $search = $request->query('search');
         $perPage = $this->listingPerPage($request);
 
-        $query = Order::forShop($shopId)
-            ->with(self::ORDER_LIST_RELATIONS)
-            ->withCount('items');
+        $query = Order::forShop($shopId);
 
         if ($status) {
             $statuses = array_filter(explode(',', $status));
@@ -66,7 +64,23 @@ class OrderController extends ShopController
 
         $this->applyDateRangeFilter($query, $request, 'order_date');
 
-        return response()->json($query->latest('order_date')->paginate($perPage));
+        $summaryQuery = clone $query;
+
+        $summary = [
+            'total_amount' => (float) $summaryQuery->sum('total_amount'),
+            'paid_amount' => (float) $summaryQuery->sum('paid_amount'),
+            'pending_amount' => (float) $summaryQuery->selectRaw('SUM(GREATEST(total_amount - paid_amount, 0)) as pending')->value('pending'),
+            'paid_orders' => (clone $query)->where('payment_status', 'paid')->count(),
+            'pending_orders' => (clone $query)->where('payment_status', 'pending')->count(),
+        ];
+
+        $paginated = $query
+            ->with(self::ORDER_LIST_RELATIONS)
+            ->withCount('items')
+            ->latest('order_date')
+            ->paginate($perPage);
+
+        return response()->json(array_merge($paginated->toArray(), ['summary' => $summary]));
     }
 
     public function store(Request $request): JsonResponse
@@ -251,11 +265,16 @@ class OrderController extends ShopController
                 ),
             ]);
 
+            $order->load('client');
+            $description = $order->client
+                ? "Payment received from {$order->client->name} for order {$order->order_number}"
+                : "Payment received for order {$order->order_number}";
+
             $transaction = Transaction::create([
                 'shop_id' => $order->shop_id,
                 'type' => 'income',
                 'amount' => $amount,
-                'description' => "Payment for order {$order->order_number}",
+                'description' => $description,
                 'category' => 'Order Payment',
                 'payment_method' => $data['payment_method'] ?? 'cash',
                 'transaction_date' => $data['transaction_date'] ?? now()->toDateString(),
@@ -282,17 +301,58 @@ class OrderController extends ShopController
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $updates = ['payment_status' => $data['payment_status']];
+        $originalPaidAmount = (float) $order->paid_amount;
+        $originalStatus = $order->payment_status;
 
         if (array_key_exists('paid_amount', $data)) {
-            $updates['paid_amount'] = $data['paid_amount'];
+            $newPaidAmount = (float) $data['paid_amount'];
         } elseif ($data['payment_status'] === 'paid') {
-            $updates['paid_amount'] = $order->total_amount;
-        } elseif ($data['payment_status'] === 'pending') {
-            $updates['paid_amount'] = 0;
+            $newPaidAmount = (float) $order->total_amount;
+        } else {
+            $newPaidAmount = 0.0;
         }
 
-        $order->update($updates);
+        $updates = [
+            'payment_status' => $data['payment_status'],
+            'paid_amount' => $newPaidAmount,
+        ];
+
+        DB::transaction(function () use ($order, $data, $originalStatus, $originalPaidAmount, $newPaidAmount, $updates) {
+            $order->update($updates);
+
+            if ($originalStatus !== 'paid' && $data['payment_status'] === 'paid') {
+                $amount = $newPaidAmount - $originalPaidAmount;
+
+                if ($amount > 0) {
+                    $order->load('client');
+                    $description = $order->client
+                        ? "Payment received from {$order->client->name} for order {$order->order_number}"
+                        : "Payment received for order {$order->order_number}";
+
+                    $transaction = Transaction::create([
+                        'shop_id' => $order->shop_id,
+                        'type' => 'income',
+                        'amount' => $amount,
+                        'description' => $description,
+                        'category' => 'Order Payment',
+                        'payment_method' => 'cash',
+                        'transaction_date' => now()->toDateString(),
+                        'client_id' => $order->client_id,
+                        'order_id' => $order->id,
+                    ]);
+
+                    NotificationDispatcher::transactionCreated($transaction);
+                }
+            }
+
+            if ($originalStatus === 'paid' && $data['payment_status'] === 'pending') {
+                Transaction::where('shop_id', $order->shop_id)
+                    ->where('order_id', $order->id)
+                    ->where('type', 'income')
+                    ->where('category', 'Order Payment')
+                    ->delete();
+            }
+        });
 
         return response()->json($order->fresh()->load(self::ORDER_RELATIONS));
     }

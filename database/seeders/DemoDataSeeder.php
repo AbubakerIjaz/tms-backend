@@ -336,50 +336,72 @@ class DemoDataSeeder extends Seeder
   /** @param  list<Client>  $clients */
   private function seedStitchingSizes(Shop $shop, array $clients): void
   {
-    $presets = [
-      ['client' => 0, 'label' => 'Eid 2025', 'size' => 'L', 'sections' => [
+    $templates = [
+      ['label' => 'Eid special', 'size' => 'L', 'sections' => [
         ['name' => 'Kameez', 'measurements' => ['Lambai' => '43', 'Chati' => '24', 'Kamar' => '23', 'Bazoo' => '25', 'Collar' => '16']],
         ['name' => 'Shalwar', 'measurements' => ['Lambai' => '42', 'Paincha' => '8.5', 'Ghera' => '26']],
       ]],
-      ['client' => 1, 'label' => 'Bridal fitting', 'size' => null, 'sections' => [
+      ['label' => 'Bridal fitting', 'size' => null, 'sections' => [
         ['name' => 'Lehnga', 'measurements' => ['Kamar' => '28', 'Hip' => '40', 'Lambai' => '42']],
         ['name' => 'Blouse', 'measurements' => ['Chati' => '36', 'Kamar' => '30', 'Bazoo' => '13']],
       ]],
-      ['client' => 2, 'label' => 'Sherwani', 'size' => 'XL', 'sections' => [
+      ['label' => 'Sherwani order', 'size' => 'XL', 'sections' => [
         ['name' => 'Sherwani', 'measurements' => ['Lambai' => '44', 'Chati' => '26', 'Kamar' => '26', 'Bazoo' => '25.5', 'Shoulder' => '20']],
         ['name' => 'Shalwar', 'measurements' => ['Lambai' => '43', 'Paincha' => '9', 'Ghera' => '28']],
       ]],
-      ['client' => 3, 'label' => 'Summer kurta', 'size' => 'M', 'sections' => [
+      ['label' => 'Summer kurta', 'size' => 'M', 'sections' => [
         ['name' => 'Kurta', 'measurements' => ['Lambai' => '40', 'Chati' => '22', 'Bazoo' => '23', 'Gala' => '14']],
       ]],
-      ['client' => 4, 'label' => 'Office shirts', 'size' => 'M', 'sections' => [
+      ['label' => 'Office shirts', 'size' => 'M', 'sections' => [
         ['name' => 'Shirt', 'measurements' => ['Collar' => '15.5', 'Chati' => '23', 'Kamar' => '22', 'Bazoo' => '24.5', 'Lambai' => '30']],
       ]],
-      ['client' => 5, 'label' => 'Wedding lehnga', 'size' => null, 'sections' => [
+      ['label' => 'Wedding lehnga', 'size' => null, 'sections' => [
         ['name' => 'Lehnga', 'measurements' => ['Kamar' => '27', 'Hip' => '38', 'Lambai' => '44']],
         ['name' => 'Maxi', 'measurements' => ['Chati' => '34', 'Kamar' => '28', 'Lambai' => '56']],
       ]],
-      ['client' => 6, 'label' => 'Formal suit', 'size' => 'L', 'sections' => [
+      ['label' => 'Formal suit', 'size' => 'L', 'sections' => [
         ['name' => 'Kameez', 'measurements' => ['Lambai' => '42', 'Chati' => '25', 'Kamar' => '24', 'Bazoo' => '24']],
         ['name' => 'Shalwar', 'measurements' => ['Lambai' => '41', 'Paincha' => '8', 'Ghera' => '25']],
       ]],
-      ['client' => 8, 'label' => 'Family Eid', 'size' => 'L', 'sections' => [
+      ['label' => 'Family Eid', 'size' => 'L', 'sections' => [
         ['name' => 'Kameez', 'measurements' => ['Lambai' => '43', 'Chati' => '25', 'Kamar' => '24', 'Bazoo' => '25', 'Collar' => '16']],
         ['name' => 'Shalwar', 'measurements' => ['Lambai' => '42', 'Paincha' => '8.5', 'Ghera' => '27']],
       ]],
-      ['client' => 10, 'label' => 'Wedding Dec', 'size' => 'XL', 'sections' => [
+      ['label' => 'Wedding December', 'size' => 'XL', 'sections' => [
         ['name' => 'Sherwani', 'measurements' => ['Lambai' => '45', 'Chati' => '27', 'Kamar' => '27', 'Bazoo' => '26', 'Shoulder' => '20.5']],
+      ]],
+      ['label' => 'Kids party wear', 'size' => 'S', 'sections' => [
+        ['name' => 'Kurta', 'measurements' => ['Lambai' => '36', 'Chati' => '20', 'Kamar' => '22']],
+        ['name' => 'Shalwar', 'measurements' => ['Lambai' => '40', 'Paincha' => '7.5', 'Ghera' => '24']],
+      ]],
+      ['label' => 'Casual kurta', 'size' => 'M', 'sections' => [
+        ['name' => 'Kurta', 'measurements' => ['Lambai' => '42', 'Chati' => '23', 'Bazoo' => '24', 'Gala' => '15']],
+      ]],
+      ['label' => 'Winter shirt', 'size' => 'L', 'sections' => [
+        ['name' => 'Shirt', 'measurements' => ['Collar' => '16', 'Chati' => '25', 'Kamar' => '24', 'Bazoo' => '25', 'Lambai' => '31']],
       ]],
     ];
 
-    foreach ($presets as $i => $preset) {
+    $notes = [
+      'Measured at shop — client confirmed fit.',
+      'Home visit measurement. Customer happy with final sample.',
+      'Updated after last fitting session.',
+      'Urgent order for ceremony.',
+      'Follow-up measurement, ready for stitching.',
+    ];
+
+    for ($i = 0; $i < 52; $i++) {
+      $template = $templates[$i % count($templates)];
+      $client = $clients[$i % count($clients)];
+      $sizeOptions = ['S', 'M', 'L', 'XL', null];
+
       $shop->stitchingSizes()->create([
-        'client_id' => $clients[$preset['client']]->id,
-        'label' => $preset['label'],
-        'standard_size' => $preset['size'],
-        'sections' => $preset['sections'],
-        'notes' => $i % 2 === 0 ? 'Measured at shop — client confirmed fit.' : null,
-        'measured_at' => now()->subDays(30 - ($i * 3))->toDateString(),
+        'client_id' => $client->id,
+        'label' => $template['label'] . ' #' . ($i + 1),
+        'standard_size' => $sizeOptions[array_rand($sizeOptions)],
+        'sections' => $template['sections'],
+        'notes' => $notes[array_rand($notes)],
+        'measured_at' => now()->subDays(rand(0, 90))->toDateString(),
       ]);
     }
   }
