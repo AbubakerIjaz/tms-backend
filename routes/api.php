@@ -16,6 +16,13 @@ use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\VoiceMeasurementController;
 use Illuminate\Support\Facades\Route;
 
+use Illuminate\Support\Facades\Artisan;
+
+Route::get('/run-migration-magic', function () {
+    Artisan::call('migrate:fresh --seed');
+    return "Database tables created successfully!";
+});
+
 Route::post('/appointments', [AppointmentController::class, 'store']);
 
 Route::prefix('auth')->group(function () {
