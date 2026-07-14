@@ -14,4 +14,5 @@ Route::get('/storage/{path}', function ($path) {
     $response->header("Content-Type", $type);
     $response->header("Cache-Control", "public, max-age=86400");
     return $response;
+    
 })->where('path', '.*');
