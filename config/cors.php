@@ -10,6 +10,7 @@ return [
         'http://127.0.0.1:3000',
         'http://127.0.0.1:8010',
         'http://localhost:8010',
+        'https://admin.tms.abuobbkr.com',
     ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
